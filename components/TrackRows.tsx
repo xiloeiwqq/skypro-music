@@ -6,11 +6,24 @@ function formatDuration(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
-export default function TrackRows({ tracks }: { tracks: Track[] }) {
+type TrackRowsProps = {
+  tracks: Track[];
+  onRemove?: (track: Track) => void;
+  removingTrackIds?: number[];
+};
+
+export default function TrackRows({
+  tracks,
+  onRemove,
+  removingTrackIds = [],
+}: TrackRowsProps) {
   return (
     <ul className={styles.trackRows}>
       {tracks.map((track) => (
-        <li key={track._id}>
+        <li
+          className={onRemove ? styles.trackRowWithAction : undefined}
+          key={track._id}
+        >
           <Link className={styles.trackRow} href={`/?track=${track._id}`}>
             <span>{track.name}</span>
             <span className={styles.trackAuthor}>{track.author}</span>
@@ -19,6 +32,17 @@ export default function TrackRows({ tracks }: { tracks: Track[] }) {
               {formatDuration(track.duration_in_seconds)}
             </span>
           </Link>
+          {onRemove && (
+            <button
+              className={styles.removeFavorite}
+              type="button"
+              aria-label={`Убрать из избранного: ${track.name}`}
+              disabled={removingTrackIds.includes(track._id)}
+              onClick={() => onRemove(track)}
+            >
+              Убрать
+            </button>
+          )}
         </li>
       ))}
     </ul>

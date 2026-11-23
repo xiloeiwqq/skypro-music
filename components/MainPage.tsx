@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type Track, type User } from '@/data';
 import {
   fetchFavoriteTracks,
@@ -14,9 +14,27 @@ import PlayerBar from './PlayerBar';
 import Sidebar from './Sidebar';
 import TrackList from './TrackList';
 
+function updateTrackLikeState(
+  track: Track,
+  userId: number,
+  shouldBeFavorite: boolean,
+): Track {
+  const likedUsers = track.staredUser ?? [];
+  const alreadyLiked = likedUsers.includes(userId);
+  if (alreadyLiked === shouldBeFavorite) return track;
+
+  return {
+    ...track,
+    staredUser: shouldBeFavorite
+      ? [...likedUsers, userId]
+      : likedUsers.filter((likedUserId) => likedUserId !== userId),
+  };
+}
+
 export default function MainPage() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const requestedTrackId = useRef<string | null>(null);
+  const favoriteMutationVersion = useRef(0);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [currentPlaylist, setCurrentPlaylist] = useState<Track[]>([]);
@@ -39,12 +57,24 @@ export default function MainPage() {
     userId: number | null;
     message: string;
   } | null>(null);
-  const favoriteTrackIds =
-    user && favoriteData?.userId === user._id ? favoriteData.ids : [];
-  const favoritesError =
-    favoritesRequestError?.userId === (user?._id ?? null)
-      ? favoritesRequestError.message
-      : null;
+  const favoriteTrackIds = useMemo(
+    () => {
+      if (!user) return [];
+      if (favoriteData?.userId === user._id) return favoriteData.ids;
+
+      return tracks
+        .filter((track) => track.staredUser?.includes(user._id))
+        .map((track) => track._id);
+    },
+    [favoriteData, tracks, user],
+  );
+  const favoritesError = useMemo(
+    () =>
+      favoritesRequestError?.userId === (user?._id ?? null)
+        ? favoritesRequestError.message
+        : null,
+    [favoritesRequestError, user],
+  );
 
   useEffect(() => {
     let active = true;
@@ -90,9 +120,10 @@ export default function MainPage() {
     if (!user) return;
 
     let active = true;
+    const requestVersion = favoriteMutationVersion.current;
     fetchFavoriteTracks()
       .then((favorites) => {
-        if (!active) return;
+        if (!active || requestVersion !== favoriteMutationVersion.current) return;
         setFavoriteData({
           userId: user._id,
           ids: favorites.map((track) => track._id),
@@ -100,7 +131,7 @@ export default function MainPage() {
         setFavoritesRequestError(null);
       })
       .catch((error: unknown) => {
-        if (!active) return;
+        if (!active || requestVersion !== favoriteMutationVersion.current) return;
         setFavoritesRequestError({
           userId: user._id,
           message:
@@ -115,46 +146,66 @@ export default function MainPage() {
     };
   }, [user]);
 
-  const toggleFavorite = async (track: Track) => {
-    if (!user) {
-      setFavoritesRequestError({
-        userId: null,
-        message: 'Войдите в аккаунт, чтобы сохранять избранные треки.',
-      });
-      return;
-    }
+  const changeFavorite = useCallback(
+    async (track: Track, shouldBeFavorite: boolean) => {
+      if (!user) {
+        setFavoritesRequestError({
+          userId: null,
+          message: 'Войдите в аккаунт, чтобы сохранять избранные треки.',
+        });
+        return;
+      }
 
-    const isFavorite = favoriteTrackIds.includes(track._id);
-    setFavoriteLoadingIds((currentIds) => [...currentIds, track._id]);
-    setFavoritesRequestError(null);
+      const isFavorite = favoriteTrackIds.includes(track._id);
+      if (isFavorite === shouldBeFavorite) return;
+      setFavoriteLoadingIds((currentIds) => [...currentIds, track._id]);
+      setFavoritesRequestError(null);
 
-    try {
-      await setTrackFavorite(track._id, isFavorite);
-      setFavoriteData((currentData) => ({
-        userId: user._id,
-        ids: isFavorite
-          ? (currentData?.userId === user._id ? currentData.ids : []).filter(
-              (id) => id !== track._id,
-            )
-          : [
-              ...(currentData?.userId === user._id ? currentData.ids : []),
-              track._id,
-            ],
-      }));
-    } catch (error) {
-      setFavoritesRequestError({
-        userId: user._id,
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Не удалось изменить избранное.',
-      });
-    } finally {
-      setFavoriteLoadingIds((currentIds) =>
-        currentIds.filter((id) => id !== track._id),
-      );
-    }
-  };
+      try {
+        await setTrackFavorite(track._id, shouldBeFavorite);
+        favoriteMutationVersion.current += 1;
+        setFavoriteData((currentData) => {
+          const currentIds =
+            currentData?.userId === user._id
+              ? currentData.ids
+              : tracks
+                  .filter((item) => item.staredUser?.includes(user._id))
+                  .map((item) => item._id);
+          const updatedIds = currentIds.filter((id) => id !== track._id);
+
+          return {
+            userId: user._id,
+            ids: shouldBeFavorite ? [...updatedIds, track._id] : updatedIds,
+          };
+        });
+        setTracks((currentTracks) =>
+          currentTracks.map((item) =>
+            item._id === track._id
+              ? updateTrackLikeState(item, user._id, shouldBeFavorite)
+              : item,
+          ),
+        );
+        setCurrentTrack((current) =>
+          current?._id === track._id
+            ? updateTrackLikeState(current, user._id, shouldBeFavorite)
+            : current,
+        );
+      } catch (error) {
+        setFavoritesRequestError({
+          userId: user._id,
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Не удалось изменить избранное.',
+        });
+      } finally {
+        setFavoriteLoadingIds((currentIds) =>
+          currentIds.filter((id) => id !== track._id),
+        );
+      }
+    },
+    [favoriteTrackIds, tracks, user],
+  );
 
   const startPlayback = useCallback(async (audio: HTMLAudioElement) => {
     try {
@@ -205,7 +256,7 @@ export default function MainPage() {
     window.history.replaceState(null, '', '/');
   }, [selectTrack, tracks]);
 
-  const togglePlayback = () => {
+  const togglePlayback = useCallback(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack) return;
 
@@ -214,9 +265,9 @@ export default function MainPage() {
     } else {
       audio.pause();
     }
-  };
+  }, [currentTrack, startPlayback]);
 
-  const playAdjacentTrack = (direction: -1 | 1) => {
+  const playAdjacentTrack = useCallback((direction: -1 | 1) => {
     if (!currentTrack || currentPlaylist.length === 0) return;
 
     const currentIndex = currentPlaylist.findIndex(
@@ -248,33 +299,65 @@ export default function MainPage() {
       (currentIndex + direction + currentPlaylist.length) %
       currentPlaylist.length;
     selectTrack(currentPlaylist[nextIndex]);
-  };
+  }, [currentPlaylist, currentTrack, isShuffle, selectTrack]);
 
-  const seek = (time: number) => {
+  const seek = useCallback((time: number) => {
     const audio = audioRef.current;
     if (!audio || !Number.isFinite(time)) return;
 
     audio.currentTime = time;
     setCurrentTime(time);
-  };
+  }, []);
 
-  const changeVolume = (nextVolume: number) => {
+  const changeVolume = useCallback((nextVolume: number) => {
     const audio = audioRef.current;
     const clampedVolume = Math.max(0, Math.min(1, nextVolume));
 
     if (audio) audio.volume = clampedVolume;
     setVolume(clampedVolume);
-  };
+  }, []);
 
-  const toggleLoop = () => {
+  const toggleLoop = useCallback(() => {
     const nextLoop = !isLoop;
     if (audioRef.current) audioRef.current.loop = nextLoop;
     setIsLoop(nextLoop);
-  };
+  }, [isLoop]);
 
   const updateCurrentPlaylist = useCallback((tracks: Track[]) => {
     setCurrentPlaylist(tracks);
   }, []);
+  const toggleShuffle = useCallback(
+    () => setIsShuffle((shuffle) => !shuffle),
+    [],
+  );
+  const playPreviousTrack = useCallback(
+    () => playAdjacentTrack(-1),
+    [playAdjacentTrack],
+  );
+  const playNextTrack = useCallback(() => playAdjacentTrack(1), [playAdjacentTrack]);
+  const retryTracks = useCallback(() => {
+    setTracksLoading(true);
+    setTracksError(null);
+    fetchTracks()
+      .then((result) => {
+        setTracks(result);
+        setTracksError(null);
+      })
+      .catch((error: unknown) => {
+        setTracksError(
+          error instanceof Error ? error.message : 'Не удалось загрузить треки.',
+        );
+      })
+      .finally(() => setTracksLoading(false));
+  }, []);
+  const setCurrentTrackFavorite = useCallback(
+    (shouldBeFavorite: boolean) => {
+      if (currentTrack) {
+        void changeFavorite(currentTrack, shouldBeFavorite);
+      }
+    },
+    [changeFavorite, currentTrack],
+  );
 
   return (
     <div className={styles.wrapper}>
@@ -285,31 +368,14 @@ export default function MainPage() {
             tracks={tracks}
             isLoading={tracksLoading}
             error={tracksError}
-            onRetry={() => {
-              setTracksLoading(true);
-              setTracksError(null);
-              fetchTracks()
-                .then((result) => {
-                  setTracks(result);
-                  setTracksError(null);
-                })
-                .catch((error: unknown) => {
-                  setTracksError(
-                    error instanceof Error
-                      ? error.message
-                      : 'Не удалось загрузить треки.',
-                  );
-                })
-                .finally(() => setTracksLoading(false));
-            }}
+            onRetry={retryTracks}
             currentTrackId={currentTrack?._id ?? null}
             isPlaying={isPlaying}
             onSelectTrack={selectTrack}
             onPlaylistChange={updateCurrentPlaylist}
             favoriteTrackIds={favoriteTrackIds}
             favoriteLoadingIds={favoriteLoadingIds}
-            favoritesError={favoritesError}
-            onToggleFavorite={toggleFavorite}
+            onFavoriteChange={changeFavorite}
           />
           <Sidebar username={user?.username} />
         </main>
@@ -348,13 +414,23 @@ export default function MainPage() {
           currentTime={currentTime}
           duration={duration || currentTrack?.duration_in_seconds || 0}
           playbackError={playbackError}
+          isFavorite={
+            currentTrack !== null && favoriteTrackIds.includes(currentTrack._id)
+          }
+          favoriteCount={currentTrack?.staredUser?.length ?? 0}
+          isFavoriteLoading={
+            currentTrack !== null &&
+            favoriteLoadingIds.includes(currentTrack._id)
+          }
+          favoritesError={favoritesError}
           onTogglePlayback={togglePlayback}
-          onPreviousTrack={() => playAdjacentTrack(-1)}
-          onNextTrack={() => playAdjacentTrack(1)}
+          onPreviousTrack={playPreviousTrack}
+          onNextTrack={playNextTrack}
           onToggleLoop={toggleLoop}
-          onToggleShuffle={() => setIsShuffle((shuffle) => !shuffle)}
+          onToggleShuffle={toggleShuffle}
           onVolumeChange={changeVolume}
           onSeek={seek}
+          onFavoriteChange={setCurrentTrackFavorite}
         />
       </div>
     </div>

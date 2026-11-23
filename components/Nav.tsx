@@ -2,13 +2,14 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { clearSession, getSession, subscribeToSessionChange } from '@/lib/session';
 import styles from './Nav.module.css';
 
 export default function Nav() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(true);
   const [username, setUsername] = useState<string | null>(null);
 
@@ -23,7 +24,7 @@ export default function Nav() {
 
   const handleLogout = () => {
     clearSession();
-    router.replace('/signin');
+    router.replace(pathname === '/favorites' ? '/' : '/signin');
   };
 
   return (

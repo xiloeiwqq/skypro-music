@@ -181,6 +181,18 @@
   stroke: #acacac;
 }
 
+.favoriteActive .actionSvg,
+.favoriteActive .favoriteCount {
+  fill: #ad61ff;
+  color: #ad61ff;
+  stroke: #ad61ff;
+}
+
+.favoriteCount {
+  color: #696969;
+  font-size: 11px;
+}
+
 .iconButton:active .actionSvg {
   fill: #696969;
   stroke: #fff;
@@ -229,6 +241,18 @@
   position: absolute;
   right: 16px;
   bottom: calc(100% + 8px);
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: #313131;
+  color: #ffb4b4;
+  font-size: 13px;
+}
+
+.favoriteError {
+  position: absolute;
+  right: 16px;
+  bottom: calc(100% + 42px);
   max-width: min(420px, calc(100vw - 32px));
   padding: 10px 14px;
   border-radius: 6px;

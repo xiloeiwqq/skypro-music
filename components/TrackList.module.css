@@ -145,7 +145,7 @@
   grid-template-columns: minmax(180px, 1.3fr) minmax(150px, 1fr) minmax(
       120px,
       0.7fr
-    ) 60px;
+    ) 92px;
   align-items: center;
   column-gap: 16px;
 }
@@ -271,12 +271,13 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 7px;
 }
 
 .trackTimeSvg {
   width: 14px;
   height: 12px;
-  margin-right: 12px;
+  margin-right: 4px;
   fill: transparent;
   stroke: #696969;
 }
@@ -284,10 +285,16 @@
 .favoriteButton {
   display: flex;
   align-items: center;
+  gap: 3px;
   padding: 4px;
   border: 0;
   background: transparent;
   cursor: pointer;
+  transition: transform 140ms ease;
+}
+
+.favoriteButton:hover:not(:disabled) {
+  transform: scale(1.1);
 }
 
 .favoriteButton:disabled {
@@ -298,6 +305,16 @@
 .favoriteActive .trackTimeSvg {
   fill: #ad61ff;
   stroke: #ad61ff;
+}
+
+.favoriteActive .favoriteCount {
+  color: #ad61ff;
+}
+
+.favoriteCount {
+  color: #696969;
+  font-size: 11px;
+  line-height: 1;
 }
 
 .requestError {

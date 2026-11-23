@@ -96,6 +96,42 @@
   color: #d9b6ff;
 }
 
+.trackRowWithAction {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 8px;
+  border-radius: 4px;
+}
+
+.trackRowWithAction:hover {
+  background: #262626;
+}
+
+.trackRowWithAction .trackRow {
+  flex: 1;
+}
+
+.removeFavorite {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border: 1px solid #696969;
+  border-radius: 30px;
+  background: transparent;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.removeFavorite:hover:not(:disabled) {
+  border-color: #d9b6ff;
+  color: #d9b6ff;
+}
+
+.removeFavorite:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .trackRow span {
   overflow: hidden;
   text-overflow: ellipsis;

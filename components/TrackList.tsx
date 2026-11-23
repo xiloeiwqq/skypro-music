@@ -19,8 +19,7 @@ type TrackListProps = {
   onPlaylistChange: (tracks: Track[]) => void;
   favoriteTrackIds: number[];
   favoriteLoadingIds: number[];
-  favoritesError: string | null;
-  onToggleFavorite: (track: Track) => void;
+  onFavoriteChange: (track: Track, shouldBeFavorite: boolean) => void;
 };
 
 function Icon({ name, className }: { name: string; className: string }) {
@@ -42,8 +41,7 @@ export default function TrackList({
   onPlaylistChange,
   favoriteTrackIds,
   favoriteLoadingIds,
-  favoritesError,
-  onToggleFavorite,
+  onFavoriteChange,
 }: TrackListProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<SelectedFilter>(null);
@@ -168,11 +166,6 @@ export default function TrackList({
         ))}
       </div>
       <div className={styles.content}>
-        {favoritesError && (
-          <p className={styles.requestError} role="alert">
-            {favoritesError}
-          </p>
-        )}
         <div className={styles.contentTitle}>
           <span className={`${styles.titleCol} ${styles.col01}`}>Трек</span>
           <span className={`${styles.titleCol} ${styles.col02}`}>
@@ -202,7 +195,11 @@ export default function TrackList({
           )}
           {!isLoading &&
             !error &&
-            visibleTracks.map((track) => (
+            visibleTracks.map((track) => {
+              const isFavorite = favoriteTrackIds.includes(track._id);
+              const favoriteCount = track.staredUser?.length ?? 0;
+
+              return (
             <div className={styles.playlistItem} key={track._id}>
               <div
                 className={`${styles.playlistTrack} ${
@@ -245,21 +242,23 @@ export default function TrackList({
                 <div className={styles.trackTime}>
                   <button
                     className={`${styles.favoriteButton} ${
-                      favoriteTrackIds.includes(track._id)
-                        ? styles.favoriteActive
-                        : ''
+                      isFavorite ? styles.favoriteActive : ''
                     }`}
                     type="button"
                     aria-label={
-                      favoriteTrackIds.includes(track._id)
-                        ? `Убрать из избранного: ${track.name}`
-                        : `Добавить в избранное: ${track.name}`
+                      `${isFavorite ? 'Убрать' : 'Добавить'} ${track.name} ` +
+                      `в избранное; лайков: ${favoriteCount}`
                     }
-                    aria-pressed={favoriteTrackIds.includes(track._id)}
+                    aria-pressed={isFavorite}
                     disabled={favoriteLoadingIds.includes(track._id)}
-                    onClick={() => onToggleFavorite(track)}
+                    onClick={() =>
+                      onFavoriteChange(track, !isFavorite)
+                    }
                   >
                     <Icon name="like" className={styles.trackTimeSvg} />
+                    <span className={styles.favoriteCount}>
+                      {favoriteCount}
+                    </span>
                   </button>
                   <span className={styles.trackTimeText}>
                     {Math.floor(track.duration_in_seconds / 60)}:
@@ -268,7 +267,8 @@ export default function TrackList({
                 </div>
               </div>
             </div>
-            ))}
+              );
+            })}
         </div>
       </div>
     </section>

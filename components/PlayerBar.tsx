@@ -13,6 +13,10 @@ type PlayerBarProps = {
   duration: number;
   canNavigate: boolean;
   playbackError: string | null;
+  isFavorite: boolean;
+  favoriteCount: number;
+  isFavoriteLoading: boolean;
+  favoritesError: string | null;
   onTogglePlayback: () => void;
   onPreviousTrack: () => void;
   onNextTrack: () => void;
@@ -20,6 +24,7 @@ type PlayerBarProps = {
   onToggleShuffle: () => void;
   onVolumeChange: (volume: number) => void;
   onSeek: (time: number) => void;
+  onFavoriteChange: (shouldBeFavorite: boolean) => void;
 };
 
 function Icon({ name, className }: { name: string; className: string }) {
@@ -48,6 +53,10 @@ export default function PlayerBar({
   duration,
   canNavigate,
   playbackError,
+  isFavorite,
+  favoriteCount,
+  isFavoriteLoading,
+  favoritesError,
   onTogglePlayback,
   onPreviousTrack,
   onNextTrack,
@@ -55,6 +64,7 @@ export default function PlayerBar({
   onToggleShuffle,
   onVolumeChange,
   onSeek,
+  onFavoriteChange,
 }: PlayerBarProps) {
   const progress = duration > 0 ? Math.min((currentTime / duration) * 100, 100) : 0;
 
@@ -156,20 +166,19 @@ export default function PlayerBar({
             </div>
             <div className={styles.trackActions}>
               <button
-                className={styles.iconButton}
+                className={`${styles.iconButton} ${
+                  isFavorite ? styles.favoriteActive : ''
+                }`}
                 type="button"
-                aria-label="Нравится"
-                disabled={!currentTrack}
+                aria-label={
+                  isFavorite ? 'Убрать лайк у трека' : 'Поставить лайк треку'
+                }
+                aria-pressed={isFavorite}
+                disabled={!currentTrack || isFavoriteLoading}
+                onClick={() => onFavoriteChange(!isFavorite)}
               >
                 <Icon name="like" className={styles.actionSvg} />
-              </button>
-              <button
-                className={styles.iconButton}
-                type="button"
-                aria-label="Не нравится"
-                disabled={!currentTrack}
-              >
-                <Icon name="dislike" className={styles.actionSvg} />
+                <span className={styles.favoriteCount}>{favoriteCount}</span>
               </button>
             </div>
           </div>
@@ -193,6 +202,11 @@ export default function PlayerBar({
           </div>
         </div>
       </div>
+      {favoritesError && (
+        <p className={styles.favoriteError} role="alert">
+          {favoritesError}
+        </p>
+      )}
       {playbackError && (
         <p className={styles.playbackError} role="alert">
           {playbackError}

@@ -249,16 +249,31 @@ export async function loginUser(email: string, password: string) {
   return session;
 }
 
-async function requestAuthorized(path: string, init: RequestInit = {}) {
+function isSessionCurrent(session: AuthSession) {
+  const currentSession = getSession();
+  return (
+    currentSession !== null &&
+    currentSession.user._id === session.user._id &&
+    currentSession.tokens.refresh === session.tokens.refresh
+  );
+}
+
+async function withReAuth<T>(
+  request: (accessToken: string) => Promise<T>,
+): Promise<T> {
   const session = getSession();
   if (!session) {
     throw new ApiError('Войдите в аккаунт, чтобы продолжить.', 401);
   }
 
   try {
-    return await requestJson(path, init, session.tokens.access);
+    return await request(session.tokens.access);
   } catch (error) {
     if (!(error instanceof ApiError) || error.status !== 401) throw error;
+  }
+
+  if (!isSessionCurrent(session)) {
+    throw new ApiError('Сессия завершена. Войдите в аккаунт ещё раз.', 401);
   }
 
   let access: string;
@@ -270,10 +285,14 @@ async function requestAuthorized(path: string, init: RequestInit = {}) {
     access = parseAccessToken(payload);
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
-      clearSession();
+      if (isSessionCurrent(session)) clearSession();
       throw new ApiError('Сессия истекла. Войдите в аккаунт ещё раз.', 401);
     }
     throw error;
+  }
+
+  if (!isSessionCurrent(session)) {
+    throw new ApiError('Сессия завершена. Войдите в аккаунт ещё раз.', 401);
   }
 
   saveSession({
@@ -282,11 +301,23 @@ async function requestAuthorized(path: string, init: RequestInit = {}) {
   });
 
   try {
-    return await requestJson(path, init, access);
+    return await request(access);
   } catch (error) {
-    if (error instanceof ApiError && error.status === 401) clearSession();
+    if (
+      error instanceof ApiError &&
+      error.status === 401 &&
+      isSessionCurrent(session)
+    ) {
+      clearSession();
+    }
     throw error;
   }
+}
+
+function requestAuthorized(path: string, init: RequestInit = {}) {
+  return withReAuth((accessToken) =>
+    requestJson(path, init, accessToken),
+  );
 }
 
 export async function fetchFavoriteTracks() {
@@ -295,8 +326,11 @@ export async function fetchFavoriteTracks() {
   );
 }
 
-export async function setTrackFavorite(trackId: number, isFavorite: boolean) {
+export async function setTrackFavorite(
+  trackId: number,
+  shouldBeFavorite: boolean,
+) {
   return requestAuthorized(`/catalog/track/${trackId}/favorite/`, {
-    method: isFavorite ? 'DELETE' : 'POST',
+    method: shouldBeFavorite ? 'POST' : 'DELETE',
   });
 }
