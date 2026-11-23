@@ -1,0 +1,197 @@
+.bar {
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(28, 28, 28, 0.9);
+}
+
+.progress {
+  width: 100%;
+  height: 5px;
+  background: #2e2e2e;
+}
+
+.playerBlock {
+  display: flex;
+  height: 73px;
+  justify-content: space-between;
+}
+
+.player,
+.controls,
+.trackPlay,
+.volumeBlock,
+.volume,
+.trackActions {
+  display: flex;
+  align-items: center;
+}
+
+.controls {
+  padding: 0 27px 0 31px;
+}
+
+.controlButton,
+.iconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.controlButton:not(:last-child) {
+  margin-right: 18px;
+}
+
+.prevSvg,
+.nextSvg {
+  width: 15px;
+  height: 14px;
+}
+
+.playSvg {
+  width: 22px;
+  height: 20px;
+  fill: #d9d9d9;
+}
+
+.nextSvg {
+  stroke: #d9d9d9;
+}
+
+.repeatSvg {
+  width: 18px;
+  height: 12px;
+}
+
+.shuffleSvg {
+  width: 19px;
+  height: 12px;
+}
+
+.repeatSvg,
+.shuffleSvg,
+.actionSvg {
+  fill: transparent;
+  stroke: #696969;
+}
+
+.trackContain {
+  display: grid;
+  grid-template-areas: 'image author' 'image album';
+  grid-template-columns: auto 1fr;
+  align-items: center;
+}
+
+.trackImage {
+  display: flex;
+  width: 51px;
+  height: 51px;
+  grid-area: image;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  background-color: #313131;
+}
+
+.trackSvg {
+  width: 18px;
+  height: 17px;
+  fill: transparent;
+  stroke: #4e4e4e;
+}
+
+.trackAuthor {
+  grid-area: author;
+  min-width: 49px;
+}
+
+.trackAlbum {
+  grid-area: album;
+  min-width: 49px;
+}
+
+.trackAuthorLink,
+.trackAlbumLink {
+  color: #fff;
+  font-size: 14px;
+  line-height: 24px;
+  white-space: nowrap;
+}
+
+.trackActions {
+  margin-left: 26px;
+}
+
+.iconButton:hover .actionSvg {
+  stroke: #acacac;
+}
+
+.iconButton:active .actionSvg {
+  fill: #696969;
+  stroke: #fff;
+}
+
+.actionSvg {
+  width: 14px;
+  height: 13px;
+}
+
+.volumeBlock {
+  padding: 0 50px 0 20px;
+}
+
+.volume {
+  gap: 17px;
+}
+
+.volumeSvg {
+  width: 13px;
+  height: 18px;
+  fill: transparent;
+}
+
+.volumeRange {
+  width: 109px;
+  height: 2px;
+  appearance: none;
+  border-radius: 5px;
+  outline: none;
+  background: #797979;
+  cursor: pointer;
+}
+
+.volumeRange::-webkit-slider-thumb {
+  width: 16px;
+  height: 16px;
+  appearance: none;
+  margin-top: -7px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #1a1a1a;
+}
+
+@media (max-width: 700px) {
+  .controls {
+    padding: 0 8px;
+  }
+
+  .controlButton:not(:last-child) {
+    margin-right: 6px;
+  }
+
+  .volumeBlock {
+    padding-right: 12px;
+  }
+
+  .volumeRange,
+  .repeatSvg,
+  .shuffleSvg {
+    display: none;
+  }
+}

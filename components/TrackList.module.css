@@ -1,0 +1,237 @@
+.centerblock {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  padding: 20px 40px 100px 6%;
+}
+
+.search {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  margin-bottom: 42px;
+  border-bottom: 1px solid #4e4e4e;
+}
+
+.searchSvg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  margin-right: 5px;
+  fill: transparent;
+  stroke: #fff;
+}
+
+.searchText {
+  flex: 1;
+  padding: 13px 10px 14px;
+  border: none;
+  background-color: transparent;
+  color: #fff;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.searchText::placeholder {
+  color: #fff;
+  opacity: 1;
+}
+
+.heading {
+  margin-bottom: 35px;
+  font-size: 64px;
+  font-weight: 400;
+  letter-spacing: -0.8px;
+  line-height: 72px;
+}
+
+.filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 38px;
+}
+
+.filterTitle {
+  margin-right: 5px;
+  font-size: 16px;
+  line-height: 24px;
+  white-space: nowrap;
+}
+
+.filterButton {
+  padding: 6px 20px;
+  border: 1px solid #fff;
+  border-radius: 60px;
+  background: transparent;
+  font-size: 16px;
+  line-height: 24px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.filterButton:hover {
+  border-color: #d9b6ff;
+  color: #d9b6ff;
+}
+
+.content {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.contentTitle,
+.playlistTrack {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.3fr) minmax(150px, 1fr) minmax(
+      120px,
+      0.7fr
+    ) 60px;
+  align-items: center;
+  column-gap: 16px;
+}
+
+.contentTitle {
+  margin-bottom: 24px;
+}
+
+.titleCol {
+  color: #696969;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 2px;
+  line-height: 24px;
+  text-transform: uppercase;
+}
+
+.titleSvg {
+  width: 12px;
+  height: 12px;
+  margin-left: auto;
+  fill: transparent;
+  stroke: #696969;
+}
+
+.playlist {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.playlistItem {
+  display: block;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.trackTitle {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.trackTitleImage {
+  display: flex;
+  width: 51px;
+  height: 51px;
+  flex: 0 0 51px;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  margin-right: 17px;
+  background: #313131;
+}
+
+.trackTitleSvg {
+  width: 18px;
+  height: 17px;
+  fill: transparent;
+  stroke: #4e4e4e;
+}
+
+.trackTitleLink,
+.trackAuthorLink,
+.trackAlbumLink,
+.trackTimeText {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+.trackTitleLink,
+.trackAuthorLink {
+  color: #fff;
+}
+
+.trackTitleExtra {
+  color: #4e4e4e;
+}
+
+.trackAuthor,
+.trackAlbum {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trackAlbumLink,
+.trackTimeText {
+  color: #696969;
+}
+
+.trackTime {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.trackTimeSvg {
+  width: 14px;
+  height: 12px;
+  margin-right: 12px;
+  fill: transparent;
+  stroke: #696969;
+}
+
+@media (max-width: 1100px) {
+  .centerblock {
+    padding-right: 24px;
+    padding-left: 32px;
+  }
+
+  .contentTitle,
+  .playlistTrack {
+    grid-template-columns: minmax(140px, 1.3fr) minmax(120px, 1fr) 60px;
+  }
+
+  .col03,
+  .trackAlbum {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .centerblock {
+    padding: 20px 16px 100px;
+  }
+
+  .heading {
+    font-size: 42px;
+    line-height: 1.2;
+  }
+
+  .filter {
+    flex-wrap: wrap;
+  }
+
+  .filterButton {
+    padding: 5px 12px;
+    font-size: 13px;
+  }
+}
