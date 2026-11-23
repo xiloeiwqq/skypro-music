@@ -185,10 +185,37 @@
   margin-bottom: 12px;
 }
 
+.currentTrack {
+  border-radius: 4px;
+  background-color: #262626;
+}
+
 .trackTitle {
   display: flex;
   min-width: 0;
   align-items: center;
+}
+
+.trackTitleLink {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.trackTitleLink:hover,
+.currentTrack .trackTitleLink {
+  color: #d9b6ff;
+}
+
+.playingStatus {
+  display: block;
+  color: #ad61ff;
+  font-size: 11px;
+  line-height: 16px;
 }
 
 .trackTitleImage {
@@ -210,7 +237,6 @@
   stroke: #4e4e4e;
 }
 
-.trackTitleLink,
 .trackAuthorLink,
 .trackAlbumLink,
 .trackTimeText {

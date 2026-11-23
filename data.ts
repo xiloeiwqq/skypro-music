@@ -131,3 +131,5 @@ export const data = [
     stared_user: [],
   },
 ];
+
+export type Track = (typeof data)[number];

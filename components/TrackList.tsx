@@ -2,11 +2,17 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { data } from '@/data';
+import { data, type Track } from '@/data';
 import styles from './TrackList.module.css';
 
 type FilterType = 'author' | 'year' | 'genre';
 type SelectedFilter = { type: FilterType; value: string } | null;
+
+type TrackListProps = {
+  currentTrackId: Track['_id'] | null;
+  isPlaying: boolean;
+  onSelectTrack: (track: Track) => void;
+};
 
 function Icon({ name, className }: { name: string; className: string }) {
   return (
@@ -16,7 +22,11 @@ function Icon({ name, className }: { name: string; className: string }) {
   );
 }
 
-export default function TrackList() {
+export default function TrackList({
+  currentTrackId,
+  isPlaying,
+  onSelectTrack,
+}: TrackListProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<SelectedFilter>(null);
   const [search, setSearch] = useState('');
@@ -148,15 +158,32 @@ export default function TrackList() {
           )}
           {visibleTracks.map((track) => (
             <div className={styles.playlistItem} key={track._id}>
-              <div className={styles.playlistTrack}>
+              <div
+                className={`${styles.playlistTrack} ${
+                  currentTrackId === track._id ? styles.currentTrack : ''
+                }`}
+              >
                 <div className={styles.trackTitle}>
                   <div className={styles.trackTitleImage}>
                     <Icon name="note" className={styles.trackTitleSvg} />
                   </div>
                   <div>
-                    <Link href="#" className={styles.trackTitleLink}>
+                    <button
+                      className={styles.trackTitleLink}
+                      type="button"
+                      aria-current={
+                        currentTrackId === track._id ? 'true' : undefined
+                      }
+                      aria-label={`Воспроизвести: ${track.name}, ${track.author}`}
+                      onClick={() => onSelectTrack(track)}
+                    >
                       {track.name}
-                    </Link>
+                      {currentTrackId === track._id && (
+                        <span className={styles.playingStatus}>
+                          {isPlaying ? 'Сейчас играет' : 'На паузе'}
+                        </span>
+                      )}
+                    </button>
                   </div>
                 </div>
                 <div className={styles.trackAuthor}>

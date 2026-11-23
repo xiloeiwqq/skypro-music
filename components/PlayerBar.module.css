@@ -8,9 +8,31 @@
 }
 
 .progress {
+  position: relative;
   width: 100%;
   height: 5px;
   background: #2e2e2e;
+}
+
+.progressFill {
+  height: 100%;
+  background: #b672ff;
+  pointer-events: none;
+}
+
+.progressInput {
+  position: absolute;
+  top: -8px;
+  left: 0;
+  width: 100%;
+  height: 21px;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.progressInput:disabled {
+  cursor: default;
 }
 
 .playerBlock {
@@ -42,6 +64,17 @@
   border: 0;
   background: transparent;
   cursor: pointer;
+}
+
+.controlButton:disabled,
+.iconButton:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.activeControl .repeatSvg,
+.activeControl .shuffleSvg {
+  stroke: #ad61ff;
 }
 
 .controlButton:not(:last-child) {
@@ -174,6 +207,18 @@
   border: 2px solid #fff;
   border-radius: 50%;
   background: #1a1a1a;
+}
+
+.playbackError {
+  position: absolute;
+  right: 16px;
+  bottom: calc(100% + 8px);
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: #313131;
+  color: #ffb4b4;
+  font-size: 13px;
 }
 
 @media (max-width: 700px) {
