@@ -46,15 +46,53 @@
   line-height: 72px;
 }
 
+.filterControls {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 38px;
+}
+
 .filter {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  margin-bottom: 38px;
+}
+
+.sortControl {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  color: #aaa;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.sortSelect {
+  max-width: 190px;
+  padding: 7px 10px;
+  border: 1px solid #696969;
+  border-radius: 6px;
+  background: #252525;
+  color: #fff;
+}
+
+.clearFilters {
+  padding: 6px 10px;
+  border: 0;
+  background: transparent;
+  color: #d9b6ff;
+  cursor: pointer;
 }
 
 .filterOptionGroup {
   position: relative;
+  z-index: 1;
 }
 
 .filterTitle {
@@ -365,6 +403,10 @@
 
   .filter {
     flex-wrap: wrap;
+  }
+
+  .filterControls {
+    flex-direction: column;
   }
 
   .filterButton {

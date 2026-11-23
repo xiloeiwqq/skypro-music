@@ -1,0 +1,48 @@
+import type { Track } from '@/data';
+
+export const tracks: Track[] = [
+  {
+    _id: 1,
+    name: 'Zebra',
+    author: 'Alpha',
+    release_date: '2024-01-03',
+    genre: ['rock', 'indie'],
+    duration_in_seconds: 180,
+    album: 'Night',
+    track_file: '/zebra.mp3',
+    staredUser: [],
+  },
+  {
+    _id: 2,
+    name: 'Apple',
+    author: 'Alpha',
+    release_date: '2022-05-01',
+    genre: ['pop'],
+    duration_in_seconds: 120,
+    album: 'Day',
+    track_file: '/apple.mp3',
+    staredUser: [],
+  },
+  {
+    _id: 3,
+    name: 'Banana',
+    author: 'Beta',
+    release_date: '2023-08-15',
+    genre: ['rock'],
+    duration_in_seconds: 240,
+    album: 'Night',
+    track_file: '/banana.mp3',
+    staredUser: [],
+  },
+  {
+    _id: 4,
+    name: 'Unknown',
+    author: 'Beta',
+    release_date: '',
+    genre: ['ambient'],
+    duration_in_seconds: 90,
+    album: 'Unknown',
+    track_file: '/unknown.mp3',
+    staredUser: [],
+  },
+];
