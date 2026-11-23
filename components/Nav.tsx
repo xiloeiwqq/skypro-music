@@ -1,8 +1,13 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
 import styles from './Nav.module.css';
 
 export default function Nav() {
+  const [isMenuOpen, setIsMenuOpen] = useState(true);
+
   return (
     <nav className={styles.nav} aria-label="Основная навигация">
       <Link href="/" className={styles.logo}>
@@ -15,12 +20,22 @@ export default function Nav() {
           priority
         />
       </Link>
-      <div className={styles.burger} aria-hidden="true">
+      <button
+        className={styles.burger}
+        type="button"
+        aria-label={isMenuOpen ? 'Свернуть меню' : 'Открыть меню'}
+        aria-expanded={isMenuOpen}
+        aria-controls="main-menu"
+        onClick={() => setIsMenuOpen((isOpen) => !isOpen)}
+      >
         <span className={styles.burgerLine} />
         <span className={styles.burgerLine} />
         <span className={styles.burgerLine} />
-      </div>
-      <ul className={styles.menuList}>
+      </button>
+      <ul
+        className={`${styles.menuList} ${isMenuOpen ? '' : styles.menuListClosed}`}
+        id="main-menu"
+      >
         <li className={styles.menuItem}>
           <Link href="/" className={styles.menuLink}>
             Главное

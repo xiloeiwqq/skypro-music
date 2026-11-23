@@ -1,35 +1,12 @@
+'use client';
+
 import Link from 'next/link';
+import { useMemo, useState } from 'react';
+import { data } from '@/data';
 import styles from './TrackList.module.css';
 
-const tracks = [
-  { title: 'Guilt', author: 'Nero', album: 'Welcome Reality', duration: '4:44' },
-  {
-    title: 'Elektro',
-    author: 'Dynoro, Outwork, Mr. Gee',
-    album: 'Elektro',
-    duration: '2:22',
-  },
-  {
-    title: 'I’m Fire',
-    author: 'Ali Bakgor',
-    album: 'I’m Fire',
-    duration: '2:22',
-  },
-  {
-    title: 'Non Stop',
-    extra: '(Remix)',
-    author: 'Стоункат, Psychopath',
-    album: 'Non Stop',
-    duration: '4:12',
-  },
-  {
-    title: 'Run Run',
-    extra: '(feat. AR/CO)',
-    author: 'Jaded, Will Clarke, AR/CO',
-    album: 'Run Run',
-    duration: '2:54',
-  },
-];
+type FilterType = 'author' | 'year' | 'genre';
+type SelectedFilter = { type: FilterType; value: string } | null;
 
 function Icon({ name, className }: { name: string; className: string }) {
   return (
@@ -40,6 +17,66 @@ function Icon({ name, className }: { name: string; className: string }) {
 }
 
 export default function TrackList() {
+  const [activeFilter, setActiveFilter] = useState<FilterType | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState<SelectedFilter>(null);
+  const [search, setSearch] = useState('');
+
+  const filterOptions = useMemo(
+    () => ({
+      author: [...new Set(data.map((track) => track.author))].sort((a, b) =>
+        a.localeCompare(b, 'ru'),
+      ),
+      year: [
+        ...new Set(data.map((track) => track.release_date.slice(0, 4))),
+      ].sort((a, b) => Number(b) - Number(a)),
+      genre: [
+        ...new Set(data.flatMap((track) => track.genre)),
+      ].sort((a, b) => a.localeCompare(b, 'ru')),
+    }),
+    [],
+  );
+
+  const visibleTracks = useMemo(() => {
+    const normalizedSearch = search.trim().toLocaleLowerCase('ru');
+
+    return data.filter((track) => {
+      const matchesSearch =
+        !normalizedSearch ||
+        [track.name, track.author, track.album].some((value) =>
+          value.toLocaleLowerCase('ru').includes(normalizedSearch),
+        );
+      const matchesFilter =
+        !selectedFilter ||
+        (selectedFilter.type === 'author' &&
+          track.author === selectedFilter.value) ||
+        (selectedFilter.type === 'year' &&
+          track.release_date.startsWith(selectedFilter.value)) ||
+        (selectedFilter.type === 'genre' &&
+          track.genre.includes(selectedFilter.value));
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [search, selectedFilter]);
+
+  const toggleFilter = (filter: FilterType) => {
+    setActiveFilter((current) => (current === filter ? null : filter));
+  };
+
+  const selectFilter = (type: FilterType, value: string) => {
+    setSelectedFilter((current) =>
+      current?.type === type && current.value === value
+        ? null
+        : { type, value },
+    );
+    setActiveFilter(null);
+  };
+
+  const filterLabels: Record<FilterType, string> = {
+    author: 'исполнителю',
+    year: 'году выпуска',
+    genre: 'жанру',
+  };
+
   return (
     <section className={styles.centerblock} aria-labelledby="tracks-heading">
       <div className={styles.search}>
@@ -50,6 +87,8 @@ export default function TrackList() {
           placeholder="Поиск"
           name="search"
           aria-label="Поиск треков"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
         />
       </div>
       <h1 className={styles.heading} id="tracks-heading">
@@ -57,15 +96,40 @@ export default function TrackList() {
       </h1>
       <div className={styles.filter}>
         <span className={styles.filterTitle}>Искать по:</span>
-        <button className={styles.filterButton} type="button">
-          исполнителю
-        </button>
-        <button className={styles.filterButton} type="button">
-          году выпуска
-        </button>
-        <button className={styles.filterButton} type="button">
-          жанру
-        </button>
+        {(Object.keys(filterLabels) as FilterType[]).map((filter) => (
+          <div className={styles.filterOptionGroup} key={filter}>
+            <button
+              className={`${styles.filterButton} ${
+                activeFilter === filter ? styles.active : ''
+              }`}
+              type="button"
+              aria-expanded={activeFilter === filter}
+              aria-haspopup="listbox"
+              onClick={() => toggleFilter(filter)}
+            >
+              {filterLabels[filter]}
+            </button>
+            {activeFilter === filter && (
+              <div className={styles.filterList} role="listbox">
+                {filterOptions[filter].map((option) => (
+                  <button
+                    className={styles.filterOption}
+                    type="button"
+                    role="option"
+                    aria-selected={
+                      selectedFilter?.type === filter &&
+                      selectedFilter.value === option
+                    }
+                    key={option}
+                    onClick={() => selectFilter(filter, option)}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
       <div className={styles.content}>
         <div className={styles.contentTitle}>
@@ -79,8 +143,11 @@ export default function TrackList() {
           </span>
         </div>
         <div className={styles.playlist}>
-          {tracks.map((track) => (
-            <div className={styles.playlistItem} key={track.title}>
+          {visibleTracks.length === 0 && (
+            <p className={styles.emptyState}>Треки не найдены</p>
+          )}
+          {visibleTracks.map((track) => (
+            <div className={styles.playlistItem} key={track._id}>
               <div className={styles.playlistTrack}>
                 <div className={styles.trackTitle}>
                   <div className={styles.trackTitleImage}>
@@ -88,12 +155,7 @@ export default function TrackList() {
                   </div>
                   <div>
                     <Link href="#" className={styles.trackTitleLink}>
-                      {track.title}{' '}
-                      {track.extra && (
-                        <span className={styles.trackTitleExtra}>
-                          {track.extra}
-                        </span>
-                      )}
+                      {track.name}
                     </Link>
                   </div>
                 </div>
@@ -109,7 +171,10 @@ export default function TrackList() {
                 </div>
                 <div className={styles.trackTime}>
                   <Icon name="like" className={styles.trackTimeSvg} />
-                  <span className={styles.trackTimeText}>{track.duration}</span>
+                  <span className={styles.trackTimeText}>
+                    {Math.floor(track.duration_in_seconds / 60)}:
+                    {String(track.duration_in_seconds % 60).padStart(2, '0')}
+                  </span>
                 </div>
               </div>
             </div>
