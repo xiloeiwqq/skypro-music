@@ -2,17 +2,25 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { data, type Track } from '@/data';
+import type { Track } from '@/data';
 import styles from './TrackList.module.css';
 
 type FilterType = 'author' | 'year' | 'genre';
 type SelectedFilter = { type: FilterType; value: string } | null;
 
 type TrackListProps = {
+  tracks: Track[];
+  isLoading: boolean;
+  error: string | null;
+  onRetry: () => void;
   currentTrackId: Track['_id'] | null;
   isPlaying: boolean;
   onSelectTrack: (track: Track) => void;
   onPlaylistChange: (tracks: Track[]) => void;
+  favoriteTrackIds: number[];
+  favoriteLoadingIds: number[];
+  favoritesError: string | null;
+  onToggleFavorite: (track: Track) => void;
 };
 
 function Icon({ name, className }: { name: string; className: string }) {
@@ -24,10 +32,18 @@ function Icon({ name, className }: { name: string; className: string }) {
 }
 
 export default function TrackList({
+  tracks,
+  isLoading,
+  error,
+  onRetry,
   currentTrackId,
   isPlaying,
   onSelectTrack,
   onPlaylistChange,
+  favoriteTrackIds,
+  favoriteLoadingIds,
+  favoritesError,
+  onToggleFavorite,
 }: TrackListProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<SelectedFilter>(null);
@@ -35,23 +51,27 @@ export default function TrackList({
 
   const filterOptions = useMemo(
     () => ({
-      author: [...new Set(data.map((track) => track.author))].sort((a, b) =>
+      author: [...new Set(tracks.map((track) => track.author))].sort((a, b) =>
         a.localeCompare(b, 'ru'),
       ),
       year: [
-        ...new Set(data.map((track) => track.release_date.slice(0, 4))),
+        ...new Set(
+          tracks
+            .map((track) => track.release_date.slice(0, 4))
+            .filter(Boolean),
+        ),
       ].sort((a, b) => Number(b) - Number(a)),
       genre: [
-        ...new Set(data.flatMap((track) => track.genre)),
+        ...new Set(tracks.flatMap((track) => track.genre)),
       ].sort((a, b) => a.localeCompare(b, 'ru')),
     }),
-    [],
+    [tracks],
   );
 
   const visibleTracks = useMemo(() => {
     const normalizedSearch = search.trim().toLocaleLowerCase('ru');
 
-    return data.filter((track) => {
+    return tracks.filter((track) => {
       const matchesSearch =
         !normalizedSearch ||
         [track.name, track.author, track.album].some((value) =>
@@ -68,7 +88,7 @@ export default function TrackList({
 
       return matchesSearch && matchesFilter;
     });
-  }, [search, selectedFilter]);
+  }, [search, selectedFilter, tracks]);
 
   useEffect(() => {
     onPlaylistChange(visibleTracks);
@@ -148,6 +168,11 @@ export default function TrackList({
         ))}
       </div>
       <div className={styles.content}>
+        {favoritesError && (
+          <p className={styles.requestError} role="alert">
+            {favoritesError}
+          </p>
+        )}
         <div className={styles.contentTitle}>
           <span className={`${styles.titleCol} ${styles.col01}`}>Трек</span>
           <span className={`${styles.titleCol} ${styles.col02}`}>
@@ -159,10 +184,25 @@ export default function TrackList({
           </span>
         </div>
         <div className={styles.playlist}>
-          {visibleTracks.length === 0 && (
+          {isLoading && <p className={styles.emptyState}>Загружаем треки…</p>}
+          {!isLoading && error && (
+            <div className={styles.requestError} role="alert">
+              <p>{error}</p>
+              <button
+                className={styles.retryButton}
+                type="button"
+                onClick={onRetry}
+              >
+                Повторить запрос
+              </button>
+            </div>
+          )}
+          {!isLoading && !error && visibleTracks.length === 0 && (
             <p className={styles.emptyState}>Треки не найдены</p>
           )}
-          {visibleTracks.map((track) => (
+          {!isLoading &&
+            !error &&
+            visibleTracks.map((track) => (
             <div className={styles.playlistItem} key={track._id}>
               <div
                 className={`${styles.playlistTrack} ${
@@ -203,7 +243,24 @@ export default function TrackList({
                   </Link>
                 </div>
                 <div className={styles.trackTime}>
-                  <Icon name="like" className={styles.trackTimeSvg} />
+                  <button
+                    className={`${styles.favoriteButton} ${
+                      favoriteTrackIds.includes(track._id)
+                        ? styles.favoriteActive
+                        : ''
+                    }`}
+                    type="button"
+                    aria-label={
+                      favoriteTrackIds.includes(track._id)
+                        ? `Убрать из избранного: ${track.name}`
+                        : `Добавить в избранное: ${track.name}`
+                    }
+                    aria-pressed={favoriteTrackIds.includes(track._id)}
+                    disabled={favoriteLoadingIds.includes(track._id)}
+                    onClick={() => onToggleFavorite(track)}
+                  >
+                    <Icon name="like" className={styles.trackTimeSvg} />
+                  </button>
                   <span className={styles.trackTimeText}>
                     {Math.floor(track.duration_in_seconds / 60)}:
                     {String(track.duration_in_seconds % 60).padStart(2, '0')}
@@ -211,7 +268,7 @@ export default function TrackList({
                 </div>
               </div>
             </div>
-          ))}
+            ))}
         </div>
       </div>
     </section>

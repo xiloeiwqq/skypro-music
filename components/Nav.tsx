@@ -2,11 +2,29 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { clearSession, getSession, subscribeToSessionChange } from '@/lib/session';
 import styles from './Nav.module.css';
 
 export default function Nav() {
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(true);
+  const [username, setUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    const updateUsername = () => {
+      setUsername(getSession()?.user.username ?? null);
+    };
+
+    updateUsername();
+    return subscribeToSessionChange(updateUsername);
+  }, []);
+
+  const handleLogout = () => {
+    clearSession();
+    router.replace('/signin');
+  };
 
   return (
     <nav className={styles.nav} aria-label="Основная навигация">
@@ -42,15 +60,33 @@ export default function Nav() {
           </Link>
         </li>
         <li className={styles.menuItem}>
-          <Link href="#" className={styles.menuLink}>
+          <Link href="/favorites" className={styles.menuLink}>
             Мой плейлист
           </Link>
         </li>
         <li className={styles.menuItem}>
-          <Link href="/signin" className={styles.menuLink}>
-            Войти
+          <Link href="/collections" className={styles.menuLink}>
+            Подборки
           </Link>
         </li>
+        {username && (
+          <li className={styles.menuItem}>
+            <button
+              className={styles.menuLink}
+              type="button"
+              onClick={handleLogout}
+            >
+              Выйти
+            </button>
+          </li>
+        )}
+        {!username && (
+          <li className={styles.menuItem}>
+            <Link href="/signin" className={styles.menuLink}>
+              Войти
+            </Link>
+          </li>
+        )}
       </ul>
     </nav>
   );

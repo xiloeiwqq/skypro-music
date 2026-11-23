@@ -281,6 +281,39 @@
   stroke: #696969;
 }
 
+.favoriteButton {
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.favoriteButton:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.favoriteActive .trackTimeSvg {
+  fill: #ad61ff;
+  stroke: #ad61ff;
+}
+
+.requestError {
+  color: #ffb4b4;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.retryButton {
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: #d9b6ff;
+  cursor: pointer;
+}
+
 .emptyState {
   padding: 12px 0;
   color: #aaa;

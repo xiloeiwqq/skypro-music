@@ -15,13 +15,18 @@
 .modal__block {
     position: absolute;
     z-index: 2;
-    left: calc(50% - (366px / 2));
-    top: calc(50% - (439px / 2));
+    left: 50%;
+    top: 50%;
+    width: calc(100vw - 32px);
+    max-width: 366px;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    transform: translate(-50%, -50%);
     opacity: 1;
 }
 
 .modal__form {
-    width: 366px;
+    width: 100%;
     background-color: #ffffff;
     border-radius: 12px;
     display: -webkit-box;
@@ -50,6 +55,11 @@
 
 .modal__btnEnter:active {
     background-color: #271a58;
+}
+
+.modal__btnEnter:disabled {
+    cursor: wait;
+    opacity: 0.7;
 }
 
 .modal__btnSignup:active {
@@ -168,6 +178,14 @@
     display: flex;
     flex-direction: column;
     gap: 5px;
+    min-height: 16px;
     font-size: 12px;
     color: red;
+}
+
+.successMessage {
+    margin-bottom: 12px;
+    color: #26734d;
+    font-size: 13px;
+    text-align: center;
 }

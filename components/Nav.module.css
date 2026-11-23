@@ -58,6 +58,15 @@
   line-height: 24px;
 }
 
+.menuList button.menuLink {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 .menuLink:hover {
   color: #d9b6ff;
 }
