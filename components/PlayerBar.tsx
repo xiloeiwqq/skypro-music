@@ -11,6 +11,7 @@ type PlayerBarProps = {
   volume: number;
   currentTime: number;
   duration: number;
+  canNavigate: boolean;
   playbackError: string | null;
   onTogglePlayback: () => void;
   onPreviousTrack: () => void;
@@ -45,6 +46,7 @@ export default function PlayerBar({
   volume,
   currentTime,
   duration,
+  canNavigate,
   playbackError,
   onTogglePlayback,
   onPreviousTrack,
@@ -58,23 +60,27 @@ export default function PlayerBar({
 
   return (
     <div className={styles.bar}>
-      <div className={styles.progress}>
-        <div
-          className={styles.progressFill}
-          style={{ width: `${progress}%` }}
-        />
-        <input
-          className={styles.progressInput}
-          type="range"
-          min={0}
-          max={Math.max(duration, 1)}
-          step={0.1}
-          value={Math.min(currentTime, duration)}
-          aria-label="Позиция воспроизведения"
-          aria-valuetext={`${formatTime(currentTime)} из ${formatTime(duration)}`}
-          disabled={!currentTrack}
-          onChange={(event) => onSeek(event.currentTarget.valueAsNumber)}
-        />
+      <div className={styles.progressRow}>
+        <span className={styles.progressTime}>{formatTime(currentTime)}</span>
+        <div className={styles.progress}>
+          <div
+            className={styles.progressFill}
+            style={{ width: `${progress}%` }}
+          />
+          <input
+            className={styles.progressInput}
+            type="range"
+            min={0}
+            max={Math.max(duration, 1)}
+            step={0.1}
+            value={Math.min(currentTime, duration)}
+            aria-label="Позиция воспроизведения"
+            aria-valuetext={`${formatTime(currentTime)} из ${formatTime(duration)}`}
+            disabled={!currentTrack}
+            onChange={(event) => onSeek(event.currentTarget.valueAsNumber)}
+          />
+        </div>
+        <span className={styles.progressTime}>{formatTime(duration)}</span>
       </div>
       <div className={styles.playerBlock}>
         <div className={styles.player}>
@@ -83,7 +89,7 @@ export default function PlayerBar({
               className={styles.controlButton}
               type="button"
               aria-label="Предыдущий трек"
-              disabled={!currentTrack}
+              disabled={!currentTrack || !canNavigate}
               onClick={onPreviousTrack}
             >
               <Icon name="prev" className={styles.prevSvg} />
@@ -104,7 +110,7 @@ export default function PlayerBar({
               className={styles.controlButton}
               type="button"
               aria-label="Следующий трек"
-              disabled={!currentTrack}
+              disabled={!currentTrack || !canNavigate}
               onClick={onNextTrack}
             >
               <Icon name="next" className={styles.nextSvg} />

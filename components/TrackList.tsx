@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { data, type Track } from '@/data';
 import styles from './TrackList.module.css';
 
@@ -12,6 +12,7 @@ type TrackListProps = {
   currentTrackId: Track['_id'] | null;
   isPlaying: boolean;
   onSelectTrack: (track: Track) => void;
+  onPlaylistChange: (tracks: Track[]) => void;
 };
 
 function Icon({ name, className }: { name: string; className: string }) {
@@ -26,6 +27,7 @@ export default function TrackList({
   currentTrackId,
   isPlaying,
   onSelectTrack,
+  onPlaylistChange,
 }: TrackListProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<SelectedFilter>(null);
@@ -67,6 +69,10 @@ export default function TrackList({
       return matchesSearch && matchesFilter;
     });
   }, [search, selectedFilter]);
+
+  useEffect(() => {
+    onPlaylistChange(visibleTracks);
+  }, [onPlaylistChange, visibleTracks]);
 
   const toggleFilter = (filter: FilterType) => {
     setActiveFilter((current) => (current === filter ? null : filter));

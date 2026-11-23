@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { data, type Track } from '@/data';
 import styles from './MainPage.module.css';
 import Nav from './Nav';
@@ -11,6 +11,7 @@ import TrackList from './TrackList';
 export default function MainPage() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
+  const [currentPlaylist, setCurrentPlaylist] = useState<Track[]>(data);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoop, setIsLoop] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
@@ -66,20 +67,37 @@ export default function MainPage() {
   };
 
   const playAdjacentTrack = (direction: -1 | 1) => {
-    if (!currentTrack) return;
+    if (!currentTrack || currentPlaylist.length === 0) return;
 
-    const currentIndex = data.findIndex((track) => track._id === currentTrack._id);
+    const currentIndex = currentPlaylist.findIndex(
+      (track) => track._id === currentTrack._id,
+    );
 
-    if (isShuffle && direction === 1 && data.length > 1) {
-      const candidates = data.filter((track) => track._id !== currentTrack._id);
+    if (currentIndex === -1) {
+      selectTrack(
+        direction === 1
+          ? currentPlaylist[0]
+          : currentPlaylist[currentPlaylist.length - 1],
+      );
+      return;
+    }
+
+    if (currentPlaylist.length === 1) return;
+
+    if (isShuffle && direction === 1 && currentPlaylist.length > 1) {
+      const candidates = currentPlaylist.filter(
+        (track) => track._id !== currentTrack._id,
+      );
       const nextTrack =
         candidates[Math.floor(Math.random() * candidates.length)];
       selectTrack(nextTrack);
       return;
     }
 
-    const nextIndex = (currentIndex + direction + data.length) % data.length;
-    selectTrack(data[nextIndex]);
+    const nextIndex =
+      (currentIndex + direction + currentPlaylist.length) %
+      currentPlaylist.length;
+    selectTrack(currentPlaylist[nextIndex]);
   };
 
   const seek = (time: number) => {
@@ -104,6 +122,10 @@ export default function MainPage() {
     setIsLoop(nextLoop);
   };
 
+  const updateCurrentPlaylist = useCallback((tracks: Track[]) => {
+    setCurrentPlaylist(tracks);
+  }, []);
+
   return (
     <div className={styles.wrapper}>
       <div className={styles.container}>
@@ -113,6 +135,7 @@ export default function MainPage() {
             currentTrackId={currentTrack?._id ?? null}
             isPlaying={isPlaying}
             onSelectTrack={selectTrack}
+            onPlaylistChange={updateCurrentPlaylist}
           />
           <Sidebar />
         </main>
@@ -142,6 +165,11 @@ export default function MainPage() {
           isPlaying={isPlaying}
           isLoop={isLoop}
           isShuffle={isShuffle}
+          canNavigate={
+            currentPlaylist.length > 1 ||
+            (currentTrack !== null &&
+              !currentPlaylist.some((track) => track._id === currentTrack._id))
+          }
           volume={volume}
           currentTime={currentTime}
           duration={duration || currentTrack?.duration_in_seconds || 0}
