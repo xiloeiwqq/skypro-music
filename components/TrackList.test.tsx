@@ -1,6 +1,9 @@
 import type { ComponentProps } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
 import { describe, expect, it, vi } from 'vitest';
+import { makeStore } from '@/store/store';
+import { setTrackItems } from '@/store/tracksSlice';
 import TrackList from './TrackList';
 import { tracks } from '@/test/trackFixtures';
 
@@ -19,20 +22,20 @@ vi.mock('next/link', () => ({
 describe('TrackList', () => {
   it('combines search, author and genre filters and sorts the playlist', async () => {
     const onPlaylistChange = vi.fn();
+    const store = makeStore();
+    store.dispatch(setTrackItems(tracks));
     render(
-      <TrackList
-        tracks={tracks}
-        isLoading={false}
-        error={null}
-        onRetry={vi.fn()}
-        currentTrackId={null}
-        isPlaying={false}
-        onSelectTrack={vi.fn()}
-        onPlaylistChange={onPlaylistChange}
-        favoriteTrackIds={[]}
-        favoriteLoadingIds={[]}
-        onFavoriteChange={vi.fn()}
-      />,
+      <Provider store={store}>
+        <TrackList
+          currentTrackId={null}
+          isPlaying={false}
+          onSelectTrack={vi.fn()}
+          onPlaylistChange={onPlaylistChange}
+          favoriteTrackIds={[]}
+          favoriteLoadingIds={[]}
+          onFavoriteChange={vi.fn()}
+        />
+      </Provider>,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'исполнителю' }));

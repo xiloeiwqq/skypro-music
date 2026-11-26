@@ -1,45 +1,24 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import type { Selection } from '@/data';
-import { fetchSelections } from '@/lib/api';
+import { useEffect } from 'react';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { loadSelections } from '@/store/collectionsSlice';
 import styles from './Sidebar.module.css';
 
 const playlistImages = ['playlist01.png', 'playlist02.png', 'playlist03.png'];
 
 export default function Sidebar({ username }: { username?: string }) {
-  const [selections, setSelections] = useState<Selection[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
+  const { items: selections, status, error } = useAppSelector(
+    (state) => state.collections,
+  );
+  const isLoading = status === 'idle' || status === 'loading';
 
   useEffect(() => {
-    let isMounted = true;
-
-    fetchSelections()
-      .then((items) => {
-        if (isMounted) {
-          setSelections(
-            items.filter((selection) => selection.name && selection.items.length),
-          );
-        }
-      })
-      .catch((requestError: unknown) => {
-        if (isMounted) {
-          setError(
-            requestError instanceof Error
-              ? requestError.message
-              : 'Не удалось загрузить подборки.',
-          );
-        }
-      })
-      .finally(() => {
-        if (isMounted) setIsLoading(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    if (status === 'idle') void dispatch(loadSelections());
+  }, [dispatch, status]);
 
   return (
     <aside className={styles.sidebar}>

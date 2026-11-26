@@ -4,50 +4,43 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
-import { registerUser } from '@/lib/api';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { clearAuthError, register } from '@/store/authSlice';
 import styles from './signup.module.css';
 
 export default function SignUp() {
     const router = useRouter();
+    const dispatch = useAppDispatch();
+    const { registrationStatus, error } = useAppSelector((state) => state.auth);
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [repeatPassword, setRepeatPassword] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [formError, setFormError] = useState<string | null>(null);
+    const isLoading = registrationStatus === 'loading';
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        setError(null);
 
         if (password !== repeatPassword) {
-            setError('Пароли не совпадают.');
+            setFormError('Пароли не совпадают.');
             return;
         }
 
+        setFormError(null);
+        dispatch(clearAuthError());
         const normalizedUsername = username.trim();
-        if (!normalizedUsername) {
-            setError('Введите имя пользователя.');
-            return;
-        }
-
-        setIsLoading(true);
-        try {
-            await registerUser({
+        dispatch(
+            register({
                 username: normalizedUsername,
                 email: email.trim(),
                 password,
-            });
-            router.replace('/signin?registered=1');
-        } catch (requestError) {
-            setError(
-                requestError instanceof Error
-                    ? requestError.message
-                    : 'Не удалось создать аккаунт. Попробуйте ещё раз.',
-            );
-        } finally {
-            setIsLoading(false);
-        }
+            }),
+        ).then((result) => {
+            if (register.fulfilled.match(result)) {
+                router.replace('/signin?registered=1');
+            }
+        });
     };
 
     return (
@@ -111,7 +104,7 @@ export default function SignUp() {
                                 onChange={(event) => setRepeatPassword(event.target.value)}
                             />
                             <div className={styles.errorContainer} role="alert">
-                                {error}
+                                {formError ?? error}
                             </div>
                             <button
                                 className={styles.modal__btnSignupEnt}

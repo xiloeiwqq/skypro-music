@@ -3,12 +3,18 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Track } from '@/data';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import {
+  clearFilters,
+  loadTracks,
+  setFilter,
+  setSearch,
+  setSortOption,
+} from '@/store/tracksSlice';
 import {
   getTrackFilterOptions,
   getVisibleTracks,
   type TrackFilterKey,
-  type TrackFilterSelection,
-  type TrackSortOption,
 } from '@/lib/trackFilters';
 import styles from './TrackList.module.css';
 import TrackFilters from './TrackFilters';
@@ -16,10 +22,6 @@ import TrackSearch from './TrackSearch';
 import TrackSort from './TrackSort';
 
 type TrackListProps = {
-  tracks: Track[];
-  isLoading: boolean;
-  error: string | null;
-  onRetry: () => void;
   currentTrackId: Track['_id'] | null;
   isPlaying: boolean;
   onSelectTrack: (track: Track) => void;
@@ -38,10 +40,6 @@ function Icon({ name, className }: { name: string; className: string }) {
 }
 
 export default function TrackList({
-  tracks,
-  isLoading,
-  error,
-  onRetry,
   currentTrackId,
   isPlaying,
   onSelectTrack,
@@ -50,14 +48,16 @@ export default function TrackList({
   favoriteLoadingIds,
   onFavoriteChange,
 }: TrackListProps) {
+  const dispatch = useAppDispatch();
+  const {
+    items: tracks,
+    status,
+    error,
+    search,
+    filters: selectedFilters,
+    sortOption,
+  } = useAppSelector((state) => state.tracks);
   const [activeFilter, setActiveFilter] = useState<TrackFilterKey | null>(null);
-  const [selectedFilters, setSelectedFilters] = useState<TrackFilterSelection>({
-    author: null,
-    year: null,
-    genre: null,
-  });
-  const [search, setSearch] = useState('');
-  const [sortOption, setSortOption] = useState<TrackSortOption>('default');
 
   const filterOptions = useMemo(() => getTrackFilterOptions(tracks), [tracks]);
 
@@ -75,21 +75,23 @@ export default function TrackList({
 
   const selectFilter = useCallback(
     (filter: TrackFilterKey, value: string) => {
-      setSelectedFilters((current) => ({
-        ...current,
-        [filter]: current[filter] === value ? null : value,
-      }));
+      dispatch(
+        setFilter({
+          key: filter,
+          value: selectedFilters[filter] === value ? null : value,
+        }),
+      );
       setActiveFilter(null);
     },
-    [],
+    [dispatch, selectedFilters],
   );
-  const clearFilters = useCallback(() => {
-    setSelectedFilters({ author: null, year: null, genre: null });
-  }, []);
 
   return (
     <section className={styles.centerblock} aria-labelledby="tracks-heading">
-      <TrackSearch value={search} onChange={setSearch} />
+      <TrackSearch
+        value={search}
+        onChange={(value) => dispatch(setSearch(value))}
+      />
       <h1 className={styles.heading} id="tracks-heading">
         Треки
       </h1>
@@ -100,9 +102,12 @@ export default function TrackList({
           activeFilter={activeFilter}
           onToggle={toggleFilter}
           onSelect={selectFilter}
-          onClear={clearFilters}
+          onClear={() => dispatch(clearFilters())}
         />
-        <TrackSort value={sortOption} onChange={setSortOption} />
+        <TrackSort
+          value={sortOption}
+          onChange={(value) => dispatch(setSortOption(value))}
+        />
       </div>
       <div className={styles.content}>
         <div className={styles.contentTitle}>
@@ -116,24 +121,25 @@ export default function TrackList({
           </span>
         </div>
         <div className={styles.playlist}>
-          {isLoading && <p className={styles.emptyState}>Загружаем треки…</p>}
-          {!isLoading && error && (
+          {(status === 'idle' || status === 'loading') && (
+            <p className={styles.emptyState}>Загружаем треки…</p>
+          )}
+          {status === 'failed' && error && (
             <div className={styles.requestError} role="alert">
               <p>{error}</p>
               <button
                 className={styles.retryButton}
                 type="button"
-                onClick={onRetry}
+                onClick={() => void dispatch(loadTracks())}
               >
                 Повторить запрос
               </button>
             </div>
           )}
-          {!isLoading && !error && visibleTracks.length === 0 && (
+          {status === 'succeeded' && visibleTracks.length === 0 && (
             <p className={styles.emptyState}>Треки не найдены</p>
           )}
-          {!isLoading &&
-            !error &&
+          {status === 'succeeded' &&
             visibleTracks.map((track) => {
               const isFavorite = favoriteTrackIds.includes(track._id);
               const favoriteCount = track.staredUser?.length ?? 0;

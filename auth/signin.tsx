@@ -5,32 +5,24 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import styles from './signin.module.css';
-import { loginUser } from '@/lib/api';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { clearAuthError, logIn } from '@/store/authSlice';
 
 export default function Signin({ isRegistered }: { isRegistered: boolean }) {
     const router = useRouter();
+    const dispatch = useAppDispatch();
+    const { loginStatus, error } = useAppSelector((state) => state.auth);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    const isLoading = loginStatus === 'loading';
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        setError(null);
-        setIsLoading(true);
-
-        try {
-            await loginUser(email.trim(), password);
-            router.replace('/');
-            router.refresh();
-        } catch (requestError) {
-            setError(
-                requestError instanceof Error
-                    ? requestError.message
-                    : 'Не удалось войти. Попробуйте ещё раз.',
-            );
-        } finally {
-            setIsLoading(false);
-        }
+        dispatch(logIn({ email: email.trim(), password })).then((result) => {
+            if (logIn.fulfilled.match(result)) {
+                router.replace('/');
+                router.refresh();
+            }
+        });
     };
 
     return (
@@ -61,7 +53,10 @@ export default function Signin({ isRegistered }: { isRegistered: boolean }) {
                                 required
                                 placeholder="Почта"
                                 value={email}
-                                onChange={(event) => setEmail(event.target.value)}
+                                onChange={(event) => {
+                                    setEmail(event.target.value);
+                                    dispatch(clearAuthError());
+                                }}
                             />
                             <input
                                 className={styles.modal__input}
@@ -71,7 +66,10 @@ export default function Signin({ isRegistered }: { isRegistered: boolean }) {
                                 required
                                 placeholder="Пароль"
                                 value={password}
-                                onChange={(event) => setPassword(event.target.value)}
+                                onChange={(event) => {
+                                    setPassword(event.target.value);
+                                    dispatch(clearAuthError());
+                                }}
                             />
                             {isRegistered && (
                                 <p className={styles.successMessage} role="status">

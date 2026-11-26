@@ -1,53 +1,53 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { type Track, type User } from '@/data';
+import type { Track } from '@/data';
 import {
   fetchFavoriteTracks,
-  fetchTracks,
   setTrackFavorite,
 } from '@/lib/api';
 import { getSession, subscribeToSessionChange } from '@/lib/session';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { setUser } from '@/store/authSlice';
+import { loadTracks, updateTrackFavorite } from '@/store/tracksSlice';
+import {
+  setCurrentPlaylist,
+  setCurrentTime,
+  setCurrentTrack,
+  setDuration,
+  setIsLoop,
+  setIsPlaying,
+  setIsShuffle,
+  setPlaybackError,
+  setVolume,
+  updateCurrentTrackFavorite,
+} from '@/store/playerSlice';
 import styles from './MainPage.module.css';
 import Nav from './Nav';
 import PlayerBar from './PlayerBar';
 import Sidebar from './Sidebar';
 import TrackList from './TrackList';
 
-function updateTrackLikeState(
-  track: Track,
-  userId: number,
-  shouldBeFavorite: boolean,
-): Track {
-  const likedUsers = track.staredUser ?? [];
-  const alreadyLiked = likedUsers.includes(userId);
-  if (alreadyLiked === shouldBeFavorite) return track;
-
-  return {
-    ...track,
-    staredUser: shouldBeFavorite
-      ? [...likedUsers, userId]
-      : likedUsers.filter((likedUserId) => likedUserId !== userId),
-  };
-}
-
 export default function MainPage() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const requestedTrackId = useRef<string | null>(null);
   const favoriteMutationVersion = useRef(0);
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
-  const [currentPlaylist, setCurrentPlaylist] = useState<Track[]>([]);
-  const [tracksLoading, setTracksLoading] = useState(true);
-  const [tracksError, setTracksError] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoop, setIsLoop] = useState(false);
-  const [isShuffle, setIsShuffle] = useState(false);
-  const [volume, setVolume] = useState(0.5);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [playbackError, setPlaybackError] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const dispatch = useAppDispatch();
+  const { items: tracks, status: tracksStatus } = useAppSelector(
+    (state) => state.tracks,
+  );
+  const {
+    currentTrack,
+    currentPlaylist,
+    isPlaying,
+    isLoop,
+    isShuffle,
+    volume,
+    currentTime,
+    duration,
+    playbackError,
+  } = useAppSelector((state) => state.player);
+  const user = useAppSelector((state) => state.auth.user);
   const [favoriteData, setFavoriteData] = useState<{
     userId: number;
     ids: number[];
@@ -77,44 +77,18 @@ export default function MainPage() {
   );
 
   useEffect(() => {
-    let active = true;
-    fetchTracks()
-      .then((result) => {
-        if (!active) return;
-        setTracks(result);
-        setTracksError(null);
-      })
-      .catch((error: unknown) => {
-        if (!active) return;
-        setTracksError(
-          error instanceof Error
-            ? error.message
-            : 'Не удалось загрузить треки.',
-        );
-      })
-      .finally(() => {
-        if (active) setTracksLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+    if (tracksStatus === 'idle') void dispatch(loadTracks());
+  }, [dispatch, tracksStatus]);
 
   useEffect(() => {
     const updateUser = () => {
       const nextUser = getSession()?.user ?? null;
-      setUser((currentUser) =>
-        currentUser?._id === nextUser?._id &&
-        currentUser?.email === nextUser?.email
-          ? currentUser
-          : nextUser,
-      );
+      dispatch(setUser(nextUser));
     };
 
     updateUser();
     return subscribeToSessionChange(updateUser);
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     if (!user) return;
@@ -178,17 +152,19 @@ export default function MainPage() {
             ids: shouldBeFavorite ? [...updatedIds, track._id] : updatedIds,
           };
         });
-        setTracks((currentTracks) =>
-          currentTracks.map((item) =>
-            item._id === track._id
-              ? updateTrackLikeState(item, user._id, shouldBeFavorite)
-              : item,
-          ),
+        dispatch(
+          updateTrackFavorite({
+            trackId: track._id,
+            userId: user._id,
+            shouldBeFavorite,
+          }),
         );
-        setCurrentTrack((current) =>
-          current?._id === track._id
-            ? updateTrackLikeState(current, user._id, shouldBeFavorite)
-            : current,
+        dispatch(
+          updateCurrentTrackFavorite({
+            trackId: track._id,
+            userId: user._id,
+            shouldBeFavorite,
+          }),
         );
       } catch (error) {
         setFavoritesRequestError({
@@ -204,20 +180,20 @@ export default function MainPage() {
         );
       }
     },
-    [favoriteTrackIds, tracks, user],
+    [dispatch, favoriteTrackIds, tracks, user],
   );
 
   const startPlayback = useCallback(async (audio: HTMLAudioElement) => {
     try {
       await audio.play();
-      setPlaybackError(null);
+      dispatch(setPlaybackError(null));
     } catch {
-      setIsPlaying(false);
-      setPlaybackError(
+      dispatch(setIsPlaying(false));
+      dispatch(setPlaybackError(
         'Не удалось воспроизвести трек. Проверьте подключение и повторите попытку.',
-      );
+      ));
     }
-  }, []);
+  }, [dispatch]);
 
   const selectTrack = useCallback((track: Track) => {
     const audio = audioRef.current;
@@ -232,15 +208,15 @@ export default function MainPage() {
       return;
     }
 
-    setCurrentTrack(track);
-    setCurrentTime(0);
-    setDuration(0);
-    setPlaybackError(null);
+    dispatch(setCurrentTrack(track));
+    dispatch(setCurrentTime(0));
+    dispatch(setDuration(0));
+    dispatch(setPlaybackError(null));
     audio.volume = volume;
     audio.src = track.track_file;
     audio.load();
     void startPlayback(audio);
-  }, [currentTrack, startPlayback, volume]);
+  }, [currentTrack, dispatch, startPlayback, volume]);
 
   useEffect(() => {
     if (tracks.length === 0) return;
@@ -306,50 +282,35 @@ export default function MainPage() {
     if (!audio || !Number.isFinite(time)) return;
 
     audio.currentTime = time;
-    setCurrentTime(time);
-  }, []);
+    dispatch(setCurrentTime(time));
+  }, [dispatch]);
 
   const changeVolume = useCallback((nextVolume: number) => {
     const audio = audioRef.current;
     const clampedVolume = Math.max(0, Math.min(1, nextVolume));
 
     if (audio) audio.volume = clampedVolume;
-    setVolume(clampedVolume);
-  }, []);
+    dispatch(setVolume(clampedVolume));
+  }, [dispatch]);
 
   const toggleLoop = useCallback(() => {
     const nextLoop = !isLoop;
     if (audioRef.current) audioRef.current.loop = nextLoop;
-    setIsLoop(nextLoop);
-  }, [isLoop]);
+    dispatch(setIsLoop(nextLoop));
+  }, [dispatch, isLoop]);
 
   const updateCurrentPlaylist = useCallback((tracks: Track[]) => {
-    setCurrentPlaylist(tracks);
-  }, []);
+    dispatch(setCurrentPlaylist(tracks));
+  }, [dispatch]);
   const toggleShuffle = useCallback(
-    () => setIsShuffle((shuffle) => !shuffle),
-    [],
+    () => dispatch(setIsShuffle(!isShuffle)),
+    [dispatch, isShuffle],
   );
   const playPreviousTrack = useCallback(
     () => playAdjacentTrack(-1),
     [playAdjacentTrack],
   );
   const playNextTrack = useCallback(() => playAdjacentTrack(1), [playAdjacentTrack]);
-  const retryTracks = useCallback(() => {
-    setTracksLoading(true);
-    setTracksError(null);
-    fetchTracks()
-      .then((result) => {
-        setTracks(result);
-        setTracksError(null);
-      })
-      .catch((error: unknown) => {
-        setTracksError(
-          error instanceof Error ? error.message : 'Не удалось загрузить треки.',
-        );
-      })
-      .finally(() => setTracksLoading(false));
-  }, []);
   const setCurrentTrackFavorite = useCallback(
     (shouldBeFavorite: boolean) => {
       if (currentTrack) {
@@ -365,10 +326,6 @@ export default function MainPage() {
         <main className={styles.main}>
           <Nav />
           <TrackList
-            tracks={tracks}
-            isLoading={tracksLoading}
-            error={tracksError}
-            onRetry={retryTracks}
             currentTrackId={currentTrack?._id ?? null}
             isPlaying={isPlaying}
             onSelectTrack={selectTrack}
@@ -384,20 +341,20 @@ export default function MainPage() {
           className={styles.audio}
           preload="metadata"
           loop={isLoop}
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
+          onPlay={() => dispatch(setIsPlaying(true))}
+          onPause={() => dispatch(setIsPlaying(false))}
           onTimeUpdate={(event) =>
-            setCurrentTime(event.currentTarget.currentTime)
+            dispatch(setCurrentTime(event.currentTarget.currentTime))
           }
           onLoadedMetadata={(event) =>
-            setDuration(event.currentTarget.duration || 0)
+            dispatch(setDuration(event.currentTarget.duration || 0))
           }
           onEnded={() => playAdjacentTrack(1)}
           onError={() => {
-            setIsPlaying(false);
-            setPlaybackError(
+            dispatch(setIsPlaying(false));
+            dispatch(setPlaybackError(
               'Не удалось загрузить аудиофайл. Проверьте подключение.',
-            );
+            ));
           }}
         />
         <PlayerBar

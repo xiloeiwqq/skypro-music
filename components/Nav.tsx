@@ -3,27 +3,22 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { clearSession, getSession, subscribeToSessionChange } from '@/lib/session';
+import { useState } from 'react';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { logOut } from '@/store/authSlice';
+import { clearSession } from '@/lib/session';
 import styles from './Nav.module.css';
 
 export default function Nav() {
   const router = useRouter();
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(true);
-  const [username, setUsername] = useState<string | null>(null);
-
-  useEffect(() => {
-    const updateUsername = () => {
-      setUsername(getSession()?.user.username ?? null);
-    };
-
-    updateUsername();
-    return subscribeToSessionChange(updateUsername);
-  }, []);
+  const dispatch = useAppDispatch();
+  const user = useAppSelector((state) => state.auth.user);
 
   const handleLogout = () => {
     clearSession();
+    dispatch(logOut());
     router.replace(pathname === '/favorites' ? '/' : '/signin');
   };
 
@@ -70,7 +65,7 @@ export default function Nav() {
             Подборки
           </Link>
         </li>
-        {username && (
+        {user && (
           <li className={styles.menuItem}>
             <button
               className={styles.menuLink}
@@ -81,7 +76,7 @@ export default function Nav() {
             </button>
           </li>
         )}
-        {!username && (
+        {!user && (
           <li className={styles.menuItem}>
             <Link href="/signin" className={styles.menuLink}>
               Войти
