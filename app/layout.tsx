@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { Montserrat } from 'next/font/google';
+import { Suspense } from 'react';
+import ReduxProviderBoundary from './ReduxProviderBoundary';
 import './globals.css';
 
 const montserrat = Montserrat({
@@ -19,7 +21,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru" className={montserrat.variable}>
-      <body>{children}</body>
+      <body>
+        <Suspense fallback={null}>
+          <ReduxProviderBoundary>{children}</ReduxProviderBoundary>
+        </Suspense>
+      </body>
     </html>
   );
 }

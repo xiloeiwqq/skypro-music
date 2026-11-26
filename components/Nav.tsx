@@ -1,8 +1,15 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import styles from './Nav.module.css';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { logout } from '@/store/authSlice';
 
 export default function Nav() {
+  const dispatch = useAppDispatch();
+  const user = useAppSelector((state) => state.auth.user);
+
   return (
     <nav className={styles.nav} aria-label="Основная навигация">
       <Link href="/" className={styles.logo}>
@@ -32,9 +39,19 @@ export default function Nav() {
           </Link>
         </li>
         <li className={styles.menuItem}>
-          <Link href="/signin" className={styles.menuLink}>
-            Войти
-          </Link>
+          {user ? (
+            <button
+              className={`${styles.menuLink} ${styles.menuButton}`}
+              type="button"
+              onClick={() => dispatch(logout())}
+            >
+              Выйти
+            </button>
+          ) : (
+            <Link href="/signin" className={styles.menuLink}>
+              Войти
+            </Link>
+          )}
         </li>
       </ul>
     </nav>

@@ -44,6 +44,11 @@
   cursor: pointer;
 }
 
+.controlButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .controlButton:not(:last-child) {
   margin-right: 18px;
 }
@@ -126,6 +131,13 @@
 
 .trackActions {
   margin-left: 26px;
+}
+
+.playerError {
+  max-width: 220px;
+  margin-left: 12px;
+  color: #ff8b8b;
+  font-size: 12px;
 }
 
 .iconButton:hover .actionSvg {

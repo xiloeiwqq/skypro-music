@@ -1,6 +1,9 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import styles from './Sidebar.module.css';
+import { useAppSelector } from '@/store/hooks';
 
 const playlists = [
   { image: 'playlist01.png', name: 'Плейлист дня' },
@@ -9,10 +12,14 @@ const playlists = [
 ];
 
 export default function Sidebar() {
+  const user = useAppSelector((state) => state.auth.user);
+
   return (
     <aside className={styles.sidebar}>
       <div className={styles.personal}>
-        <p className={styles.personalName}>Sergey.Ivanov</p>
+        <p className={styles.personalName}>
+          {user?.username ?? user?.email ?? 'Гость'}
+        </p>
         <div className={styles.icon} aria-hidden="true" />
       </div>
       <div className={styles.block}>
